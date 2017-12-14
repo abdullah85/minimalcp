@@ -1,0 +1,77 @@
+# IPython log file
+
+get_ipython().magic(u'time from lk import *')
+ann1 = getAnnFml(a, 0, s1A)
+ann2 = getAnnFml(b, 0, s1B)
+fml = And(ann1, ann2, cPass)
+dL = extractDealsProps(fml)
+dIL = l4.getIndices(dL)
+cDeals = []
+for i in dIL:
+    cDeals.append(l4.deals[i])
+    
+dIL
+len(dIL)
+cDeals[:5]
+cDeals
+l4.iL2AnnL(s1C)
+cHCount = {}
+for deal in cDeals:
+    cH = str(deal[c])
+    if cH in cHCount.keys():
+        cHCount[cH] = cHCount[cH] + 1
+    else:
+        cHCount[cH] = 0
+        
+cHCount
+cHCount.values()
+max(cHCount.values())
+cHCount = {}
+for deal in cDeals:
+    cH = str(deal[c])
+    if cH in cHCount.keys():
+        cHCount[cH] = cHCount[cH] + 1
+    else:
+        cHCount[cH] = 0
+        
+cHCount
+max(cHCount.values())
+cHCount = {}
+for deal in cDeals:
+    cH = str(deal[c])
+    if cH in cHCount.keys():
+        cHCount[cH] = cHCount[cH] + 1
+    else:
+        cHCount[cH] = 1
+        
+max(cHCount.values())
+max(cHCount.values())
+doubleEntry = []
+for h in cHCount.keys():
+    if cHCount[h] > 1:
+        doubleEntry.append(h)
+        
+    
+doubleEntry
+cDeals
+cDuplicates = []
+for cH in doubleEntry:
+    cDuplicates.append(eval(cH))
+    
+cDuplicates
+cProbDeals = []
+for d in cDeals:
+    if d[c] in cDuplicates:
+        cProbDeals.append(d)
+        
+cProbDeals
+cProbDeals = ut.sortDeals_byLst(['c', 'b' ,'a'])
+cProbDeals = ut.sortDeals_byLst(cProbDeals, ['c', 'b' ,'a'])
+cProbDeals
+ann3L
+ann3L = l4.iL2AnnL(s1C)
+ann3L
+cProbDeals
+str(ann3L)
+get_ipython().magic(u'logsrt cDebug.txt')
+get_ipython().magic(u'logstart cDebug.txt')

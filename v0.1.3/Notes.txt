@@ -1,0 +1,26 @@
+
+a) validDeal
+b) ownership
+c) hand2K
+d) kConsistency
+e) ownershipK
+f) dealK
+
+
+Let the agents be a1, ... ak
+    and distribution type be n_a1, ... n_ak
+Let p,q,r \in Agts such that p!= q and r!=p and r!=q.
+Let x,y,z \in Cards = {0, 1, ... n}
+
+a) ExactlyK([p_0, ..., p_n], n_p)       (vD)
+b) ExactlyK([a1_x, ..., ak_x], 1)       (owN)
+c) p_x => (KpNq_x)                      (hK)
+d) (Kpq_x => Not(KpNq_x)) 	        (kCon)
+e) (Kpq_x <=> ((Not p__x) /\ KpNr__x))  (Ok)
+f) Conjunction of the following         (dK)
+   1) AtMostK(  Kpq, n_q)               
+   2) AtMostK( KpNq, (n-n_q))
+   3) ExactlyK(  Kpq, n_q) 
+      <=> ExactlyK(  KpNq, (n-n_q))
+   4) (forall r ExactlyK(Kpr, n_r)) 
+       => ExactlyK(  Kpq, n_q)
