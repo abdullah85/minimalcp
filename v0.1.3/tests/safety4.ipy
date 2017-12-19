@@ -33,7 +33,7 @@ while remDLSI != [] and res == z3.sat:
   f.write(str(nAnnC) + ') : ' + str(annCI)) # the current Announcement
   f.write('\n\t Deals : \n' + str(dlsC) +'\n\n')
   remDLSI = elimDLI(remDLSI, dlsCI)
-  fml = Or(l4.oneOfDeals(remDLSI))
+  fml = Or(l4.dealsBL(remDLSI))
   synth.add(fml)
   %time res = synth.check()
   nAnnC = nAnnC + 1
