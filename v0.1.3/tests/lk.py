@@ -354,6 +354,26 @@ class Leakage:
         self.ann[agt].append(z3.BoolVector(agt+str(r), nHands))
     self.nRounds = nRounds
 
+  def dealsBL(self, dListI):
+    '''
+    A list of propositions corresponding to indices dListI
+    '''
+    bL = []
+    for i in dListI:
+      bL.append(self.possibleDeals[i])
+    return bL
+
+  def annBL(self, agt, rnd, aLstI):
+    '''
+    A list of propositions corresponding to the indices aLstI 
+              for agt's announcement at rnd
+    '''
+    bL = []
+    annList = self.ann[agt][rnd]
+    for i in aLstI:
+      bL.append(annList[i])
+    return bL
+
   def deal2Ann(self, agt, rnd):
     '''
     When deal is true how should ann variables (of agt at rnd) be set.
