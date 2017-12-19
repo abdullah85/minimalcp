@@ -595,7 +595,7 @@ class Leakage:
   def iL2Deals(self, iL):
     deals = []
     for i in iL:
-      deals.append(l4.deals[i])
+      deals.append(self.deals[i])
     return deals
 
   def annL2iL(self, agt, annL):
