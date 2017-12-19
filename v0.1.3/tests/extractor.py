@@ -4,7 +4,6 @@ from lk import *
 #  TO clean up, abstract
 ################################################################
 
-
 # A possible target for 4 | 4 | 4.
 # corresponds to the run
 # ann1 = ('a', [[0, 1, 2, 3], [0, 1, 2, 5], [0, 1, 3, 5], [0, 2,  3,  5], [1, 2, 3,  5]])
