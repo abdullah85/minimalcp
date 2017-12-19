@@ -38,3 +38,10 @@ sAL = []
 def getAFml():
   sAL = l4.rSInf4Agt('optimized/4-sInfA.txt')
   return sAL
+
+def elimDLI(origDL, elimL):
+  resL = []
+  for i in origDL:
+    if i not in elimL:
+      resL.append(i)
+  return resL
