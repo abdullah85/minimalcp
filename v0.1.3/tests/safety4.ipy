@@ -1,0 +1,32 @@
+%time from extractSoln import *;
+%time fa = getAFml(); %time fb = getBFml();
+# for obtaining C's announcements that indicate how he can inform others
+synth = z3.Solver();  synth = addToSolver(synth, fLst, True)
+ann1F = getAnnFml(a, 0, ann1I)
+ann2F = getAnnFml(b, 0, ann2I)
+synth.add(ann1F, ann2F)
+%time synth.add(fa)      ; %time synth.add(fb); 
+%time res = synth.check(); nAnnC = 0;
+# Get the original set of deals for which C knows.
+remDLSI = l4.getIndices(l4.getTruePropsPrefixedBy(solver.model(), 'd'))
+# Documenting the solution
+f= open('soln1.txt', 'w')
+f.write('ann1 Indices : ' + str(ann1I) + '\n');
+f.write('ann2 Indices : ' + str(ann2I) + '\n\n');
+f.write('deals (after ann1;ann2) : \n' + str(deals) + '\n\n')
+f.write('Now for C\'s announcement(s), \n' )
+while remDLSI != [] and res == z3.sat:
+  %time m1 = synth.model()
+  dlsCP  = l4.getTruePropsPrefixedBy(m1, 'd'); 
+  dlsCI = l4.getIndices(dlsCP)
+  dlsC = []
+  for i in dlsCI:    dlsC.append( l4.deals[i] )
+  annC  = l4.getTruePropsPrefixedBy(m1, 'c')
+  annCI = l4.getIndices(ann3a); annCI.sort()
+  f.write(str(nAnnc) + ') : ' + str(annCI)) # the current Announcement
+  f.write('\t Deals : ' + str(dlsC) +'\n\n')
+  remDLSI = elimDLI(remDLSI, dlsCI)
+  fml = Or(l4.oneOfDeals(remDLSI));  synth.add(fml)
+  %time res = synth.check()
+  nAnnC = nAnnC + 1
+f.close()
