@@ -1,4 +1,7 @@
+print 
+print 'Starting extractSoln ... '
 from lk import *
+from prevLK import *
 
 solver, fLst = l4.safetySynthSolver(True)
 sInfC = l4.rSInf4Agt('optimized/4-sInfC.txt')
@@ -7,10 +10,8 @@ solver.add(sInfC)
 a5 = restrictWidth('a', 5)
 solver.add(a5)
 solver.add(l4.possibleDeals[0])
-
 # not restricting b's width (consider the example)
 solver.add(cPass) # indicating that c passes
-
 res1 = solver.check()
 if res1 == z3.sat:
   m = solver.model()
