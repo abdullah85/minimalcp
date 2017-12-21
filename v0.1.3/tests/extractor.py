@@ -47,7 +47,7 @@ def getStrongSafety_Solver(lObj):
   fLst.append(strongFml)
   return solver,fLst
 
-def initSolver4KC(lObj, solver, cFile, aWidth):
+def initSolver4KC(lObj, solver, aWidth):
   '''
   Add constraints to the solver for ensuring that
   C knows the deal at the end.
@@ -74,6 +74,7 @@ def initSolver4KC(lObj, solver, cFile, aWidth):
 def run2KC(lObj, solver):
   '''
   Obtaining a run to reveal the deal to C.
+  solver must be initialized appropriately.
   '''
   res = solver.check()
   deals = []
@@ -96,10 +97,16 @@ def run2KC(lObj, solver):
   return (ann1I, ann2I, deals)
 
 hashes = '################################################################'
+
 ################################################################
 ####    Onto the part where C informs A,B.
 ################################################################
 def informAB(lObj, fLst, ann1I, ann2I, outFName) :
+  '''
+  fLst consists of all the formulae obtained from either
+  a) getSafety_Solver
+  b) getStrongSafety_Solver
+  '''
   fa = getAgtFml(lObj, 'a')
   fb = getAgtFml(lObj, 'b')
   # for obtaining C's announcements that indicate how he can inform others
@@ -110,32 +117,30 @@ def informAB(lObj, fLst, ann1I, ann2I, outFName) :
   synth.add(ann1F, ann2F)
   synth.add(fa)
   synth.add(fb)
-  res = synth.check()
   nAnnC = 0
+  res = synth.check()
+  # The assumption is that res is sat when we reach here.
+  #          (can be checked before at run4KC).
+  m = solver.model()
   # Get the original set of deals for which C knows.
-  if res !=  z3.sat:
-    f= open(outFName, 'a')
-    f.write(hashes)
-    f.write('\nunsat\n')
-    f.write(hashes)
-    f.close()
-    return
-  remDLSI = lObj.getIndices(lObj.getTruePropsPrefixedBy(solver.model(), 'd'))
+  remDLSI = lObj.getIndices(lObj.getTruePropsPrefixedBy(m, 'd'))
   # Documenting the solution
   f= open(outFName, 'a')
   f.write('ann1 Indices : ' + str(ann1I) + '\n')
   f.write('ann2 Indices : ' + str(ann2I) + '\n\n')
   f.write('deals (after ann1;ann2) : \n' + str(deals) + '\n\n')
   f.write('Now for C\'s announcement(s), \n' )
+  ann3L = []
   while remDLSI != [] and res == z3.sat:
-    m1 = synth.model()
-    dlsCP  = lObj.getTruePropsPrefixedBy(m1, 'd')
+    m = synth.model()
+    dlsCP  = lObj.getTruePropsPrefixedBy(m, 'd')
     dlsCI = lObj.getIndices(dlsCP)
     dlsC = []
     for i in dlsCI:    dlsC.append( lObj.deals[i] )
-    annCP = lObj.getTruePropsPrefixedBy(m1, 'c')
+    annCP = lObj.getTruePropsPrefixedBy(m, 'c')
     annCI = lObj.getIndices(annCP)
     annCI.sort()
+    ann3L.append(annCI)
     f.write(str(nAnnC) + ') : ' + str(annCI)) # the current Announcement
     f.write('\n\t Deals : \n' + str(dlsC) +'\n\n')
     remDLSI = elimDLI(remDLSI, dlsCI)
@@ -144,3 +149,30 @@ def informAB(lObj, fLst, ann1I, ann2I, outFName) :
     res = synth.check()
     nAnnC = nAnnC + 1
   f.close()
+  return (ann1I, ann2I, ann3L)
+
+def writeAnnL(lObj, ann1I, ann2I, ann3L, fName):
+  '''
+  Write out the actual announcements in full form.
+  '''
+  f = open(fName, 'a')
+  f.write('# A\'s announcement :\n')
+  annA = lObj.iL2AnnL(annn1I)
+  f.write(getAnnStr(annA)+'\n')
+  f.write('# B\'s announcement :\n')
+  annB = lObj.iL2AnnL(ann2I)
+  f.write(getAnnStr(annB) + '\n')
+  f.write('# C\'s announcements :\n')
+  nC = 0
+  for annCI in ann3L:
+    f.write('# Announcement '+str(nC)+') : \n')
+    annC = getAnnStr(annCI)
+    f.write(getAnnStr(annC) + '\n')
+    nC = nC + 1
+  f.close()
+
+def getAnnStr(annL):
+  resStr = '[\n'
+  for disj in annL:
+    resStr = resStr+'  '+str(disj)+',\n'
+  resStr = resStr+']\n'
