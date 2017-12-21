@@ -661,12 +661,18 @@ class Leakage:
       pL.append(self.deals[i])
     return pL
 
-  def writeSInfFml(sInf):
-    for i in range(len(sInf)):
-      sFml = sInf[i]
-      f = open('soInf/d-'+str(i)+'.txt', 'w')
-      pk.dump(sFml.sexpr(), f)
-      f.close()
+  def genSaveSInfFml(self, agt):
+    '''
+    Generate and save sInf Fml.
+    '''
+    i = self.hSize
+    aName = agt.upper()
+    fName = 'optimized/' + str(i) + '-sInf' + aName + '.txt'
+    fml = And(self.sInf4Agt(agt))
+    expr = fml.sexpr()
+    f = open(fName, 'w')
+    pk.dump(expr, f)
+    f.close()
 
   def rSInf4Agt(self, fName):
     f = open(fName)
@@ -724,8 +730,8 @@ class Leakage:
     for i in range(len(self.handList)) :
       if not i in annIL :
         notAnnL.append(i)
-    annProps = l4.iL2PropL(agt, rnd, annIL)
-    notAnnProps = l4.iL2PropL(agt, rnd, notAnnL)
+    annProps = self.iL2PropL(agt, rnd, annIL)
+    notAnnProps = self.iL2PropL(agt, rnd, notAnnL)
     annFL = []
     for p in annProps :
       annFL.append(p)
@@ -752,13 +758,13 @@ class Leakage:
     '''
     resFml = []
     for i in range(self.nRounds):
-      fml = restrictWidthRound(agt, i, w)
+      fml = self.restrictWidthRound(agt, i, w)
       resFml.append(fml)
     return resFml
 
   def restrictWidthAll(self, w):
     fL = []
-    for agt in l4.agents:
+    for agt in self.agents:
       fL.append(self.restrictWidth(agt, w))
     return And(fL)
 
@@ -777,8 +783,8 @@ class Leakage:
     res = solver.check()
     if res == z3.sat:
       m  = solver.model()
-      dL = l4.getTruePropsPrefixedBy(m, 'd')
-      dL = l4.sortIndices(dL)
+      dL = self.getTruePropsPrefixedBy(m, 'd')
+      dL = self.sortIndices(dL)
     return dL
 
   # TODO
@@ -804,34 +810,34 @@ class Leakage:
       i = i + 1
     return mLst
 
-  def isFirstAnnTheSame(mLst):
+  def isFirstAnnTheSame(self, mLst):
     firstAnnSame = True
     i = 0
     while firstAnnSame and i < len(dL1):
-      la = l4.getIndices(l4.getTruePropsPrefixedBy(m, a))
+      la = self.getIndices(self.getTruePropsPrefixedBy(m, a))
       la.sort()
       cEq1 = (la == s1A)
       firstAnnSame = firstAnnSame and cEq1
       i = i + 1
     return fistAnnSame
 
-  def getAnnBC(mLst):
+  def getAnnBC(self, mLst):
     annL = []
     for i in range(len(mLst)):
       m = mLst[i]
-      bP = l4.getIndices(l4.getTruePropsPrefixedBy(m, 'b'))
-      cP = l4.getIndices(l4.getTruePropsPrefixedBy(m, 'c'))
+      bP = self.getIndices(self.getTruePropsPrefixedBy(m, 'b'))
+      cP = self.getIndices(self.getTruePropsPrefixedBy(m, 'c'))
       currAnnL = [bP, cP] #Note the order
       annL.append(currAnnL)
     return annL
 
-  def compAgtDeals4(fml, agt, rnd, iL):
+  def compAgtDeals4(self, fml, agt, rnd, iL):
     '''
     What does agt know for each hand indexed in iL with fml before
     '''
     agtDeals = []
     for i in iL:
-      agtHand = l4.handList[i]
+      agtHand = self.handList[i]
       agtHFml = getAnnFml(agt, rnd, [i])
       aD = extractDealsProps(And(fml, agtHFml))
       agtDeals.append(aD)

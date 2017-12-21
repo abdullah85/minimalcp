@@ -19,4 +19,4 @@ for i in range(4,11):
   %time lObj = getLkObj(i)
   for agt in lObj.agents:
     printMessage('Generating optimized file for agt : '+agt)
-    %time writeAgtFml(lObj, agt)
+    %time lObj.genSaveSInfFml(agt)

@@ -11,8 +11,8 @@ def printMessage(msg):
   print msg
   spacer()
 
-printMessage('Initializing LKObj(4)')
-%time l4 = getLKObj(4)
+printMessage('Initializing LkObj(4)')
+%time l4 = getLkObj(4)
 
 printMessage('Get safety solver')
 %time solver, fLst = getSafety_Solver(l4)
