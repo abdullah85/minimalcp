@@ -14,7 +14,7 @@ def printMessage(msg):
   print msg
   spacer()
 
-for i in range(4,11):
+for i in range(5,11):
   printMessage('Obtaining lKObj for hSize : '+str(i))
   %time lObj = getLkObj(i)
   for agt in lObj.agents:

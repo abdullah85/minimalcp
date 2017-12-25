@@ -79,7 +79,8 @@ def run2KC(lObj, solver):
     f2 = lObj.getAnnFml(b, 0, ann2I)
     ann1L = lObj.iL2AnnL(ann1I)
     ann2L = lObj.iL2AnnL(ann2I)
-    dListP = extractDealsProps(And(f1, f2, cPass))
+    cPass = And(lObj.ann['c'][0])
+    dListP = lObj.extractDealsProps(And(f1, f2, cPass))
     dListI = lObj.getIndices(dListP)
     for i in dListI:
       deals.append(lObj.deals[i])
