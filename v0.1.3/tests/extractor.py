@@ -169,9 +169,7 @@ def allBAnn(lObj, fLst, fa, fb, fc, aWidth, cutoff, outFName) :
   synth.add(cPass)
   synth.add(fc)
   resb = synth.check()
-  remHndsB = []
-  for h in lObj.handList:
-    remHndsB.append(h)
+  remHndsB = range(len(lObj.handList))
   resAnnI = [[],[],[]] # Store all resulting announcements
   if resb == z3.sat:
     m = synth.model()
@@ -190,9 +188,9 @@ def allBAnn(lObj, fLst, fa, fb, fc, aWidth, cutoff, outFName) :
     ann2I.sort()    
     resAnnI[1].append(ann2I)
     newRemB = []
-    for h in remHndsB:
-      if not h in ann2I:
-        newRemB.append(h)
+    for idx in remHndsB:
+      if not idx in ann2I:
+        newRemB.append(idx)
     remHndsB = newRemB
     ann2L = lObj.iL2AnnL(ann2I)
     # ann2 found such that c learns
@@ -234,7 +232,7 @@ def allBAnn(lObj, fLst, fa, fb, fc, aWidth, cutoff, outFName) :
     synth.pop()
     # Obtain a new ann2 that ensures progress.
     a2fml = lObj.annBL('b', 0, remHndsB)
-    synth.add(a2fml)
+    synth.add(Or(a2fml))
     resb = synth.check()
     nAnnB = nAnnB + 1
     f.close()
