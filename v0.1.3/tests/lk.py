@@ -341,6 +341,36 @@ class Leakage:
       fLst.append(fml)
     return fLst
 
+  def sInf4AgtOpt(self, agt):
+    '''
+    Optimizing sInf4Agt
+    '''
+    eqClasses = []
+    dProps = []
+    for prop in self.possibleDeals:
+      dProps.append(prop)    
+
+    currDeal = self.deals[i]
+    currHand = currDeal[agt]
+    head = self.possibleDeals[i]
+    body = []
+    for j in range(len(self.deals)):
+      altDeal = self.deals[j]
+      altHand = altDeal[agt]
+      altBool = self.possibleDeals[j]
+      if (i != j and currHand == altHand):
+        body.append( Not(altBool) )
+    if body == []:
+      body = True
+    body = And(body)
+    fml = Implies(head, body)
+    
+    nDeals = len(self.deals)
+    for i in range(nDeals):
+      fml = self.sInf4AgtAt(agt, i)
+      fLst.append(fml)
+    return fLst
+
   def initAnn(self, nRounds):
     '''
     initialize boolean variables denoting possible announcements by 
@@ -536,6 +566,17 @@ class Leakage:
     for triple in extendedL:
       sortedLst.append(triple[-1])
     return sortedLst
+
+  def fLgetIndices(self, fL):
+    '''
+    Given a list of formulae, obtain the indices of each formula.
+    We assume that each formula has only one occurrence of '__'
+    '''
+    iL = []
+    for f in fL:
+      idx = int(f.sexpr().split(')')[0].split('__')[-1])
+      iL.append(idx)
+    return iL
 
   def getIndices(self, decL):
     idL = []
