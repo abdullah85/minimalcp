@@ -1,4 +1,5 @@
 from lk import *
+import pickle as pk
 
 def getLkObj(i):
   lObj = Leakage(i)
@@ -7,23 +8,11 @@ def getLkObj(i):
   lObj.initAnn(1)
   return lObj
 
-def writeAgtFml(lObj, agt):
-  '''
-  Save sInfFml to optimized/i-sInfP.txt
-  where i is the hand size while P is the agent.
-  '''
-  i = lObj.hSize
-  aName = agt.upper()
-  fName = 'optimized/' + str(i) + '-sInf' + aName + '.txt'
-  fml = lObj.sInf4Agt(agt)
-  expr = fml.sexpr()
-  f = open(fName, 'w')
-  f.write(expr)
-  f.close()
-
 def getAgtFml(lObj, agt):
   '''
   Obtain (or read) optimized formula from optimized/i-sInfP.txt
+  Assumes that the files have already been generated for
+  lObj (via lObj.genSaveSInfFml(agt))  (see genAll_i.py)
   '''
   i = lObj.hSize
   aName = agt.upper()
@@ -86,17 +75,16 @@ def run2KC(lObj, solver):
     ann1I = lObj.getIndices(ann1P)
     ann2I = lObj.getIndices(ann2P)
     ann1I.sort(), ann2I.sort()
-    f1 = getAnnFml(a, 0, ann1I)
-    f2 = getAnnFml(b, 0, ann2I)
+    f1 = lObj.getAnnFml(a, 0, ann1I)
+    f2 = lObj.getAnnFml(b, 0, ann2I)
     ann1L = lObj.iL2AnnL(ann1I)
     ann2L = lObj.iL2AnnL(ann2I)
-    dList = extractDealsProps(And(f1, f2, cPass))
-    dListI = lObj.getIndices(dList)
+    cPass = And(lObj.ann['c'][0])
+    dListP = lObj.extractDealsProps(And(f1, f2, cPass))
+    dListI = lObj.getIndices(dListP)
     for i in dListI:
       deals.append(lObj.deals[i])
   return (ann1I, ann2I, deals)
-
-hashes = '################################################################'
 
 ################################################################
 ####    Onto the part where C informs A,B.
