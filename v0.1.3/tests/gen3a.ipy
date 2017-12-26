@@ -1,0 +1,20 @@
+from extractor import *
+
+hashes = '################################################################'
+def spacer():
+  print
+  print hashes
+  print
+
+def printMessage(msg):
+  spacer()
+  print msg
+  spacer()
+
+
+printMessage('Creating l4 ...')
+%time l4 = getLkObj(4)
+printMessage('Creating l5 ...')
+%time l5 = getLkObj(5)
+printMessage('Creating l6 ...')
+%time l6 = getLkObj(6)

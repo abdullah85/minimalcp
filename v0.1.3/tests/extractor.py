@@ -87,6 +87,25 @@ def run2KC(lObj, solver):
   return (ann1I, ann2I, deals)
 
 ################################################################
+####    An announcement by B not in
+################################################################
+def altBAnn(fLst, ann1I) :
+  '''
+  fLst consists of all the formulae obtained from either
+  a) getSafety_Solver
+  b) getStrongSafety_Solver
+  '''
+  # for obtaining C's announcements that indicate how he can inform others
+  synth = z3.Solver()
+  synth = addToSolver(synth, fLst, True)
+  ann1F = lObj.getAnnFml(a, 0, ann1I)
+
+def getfmlAB():
+  fa = getAgtFml(lObj, 'a')
+  fb = getAgtFml(lObj, 'b')
+  return (fa,fb)
+  
+################################################################
 ####    Onto the part where C informs A,B.
 ################################################################
 def informAB(lObj, fLst, ann1I, ann2I, outFName) :
@@ -95,8 +114,6 @@ def informAB(lObj, fLst, ann1I, ann2I, outFName) :
   a) getSafety_Solver
   b) getStrongSafety_Solver
   '''
-  fa = getAgtFml(lObj, 'a')
-  fb = getAgtFml(lObj, 'b')
   # for obtaining C's announcements that indicate how he can inform others
   synth = z3.Solver()
   synth = addToSolver(synth, fLst, True)
