@@ -84,7 +84,7 @@ def run2KC(lObj, solver):
       deals.append(lObj.deals[i])
   return (ann1I, ann2I, deals)
 
-def getfmlABC():
+def getfmlABC(lObj):
   fa = getAgtFml(lObj, 'a')
   fb = getAgtFml(lObj, 'b')
   fc = getAgtFml(lObj, 'c')
