@@ -156,7 +156,7 @@ def altBAnn(lObj, fLst, aWidth, cutoff, outFName) :
   aPass = And(aP[0])
   bPass = And(bP[0])
   cPass = And(cP[0])
-  fa, fb, fc = getfmlABC()
+  fa, fb, fc = getfmlABC(lObj)
   # The solver code initialization
   synth = z3.Solver()
   synth = addToSolver(synth, fLst, True)
@@ -174,7 +174,9 @@ def altBAnn(lObj, fLst, aWidth, cutoff, outFName) :
   resb = synth.check()
   remHndsB = []
   resAnnI = [[],[],[]] # Store all resulting announcements
+  f= open(outFName, 'a')  
   if resb == z3.sat:
+    m = synth.model()
     ann1P =  lObj.getTruePropsPrefixedBy(m, 'b')
     ann1I = lObj.getIndices(ann1P)
     ann1I.sort()
@@ -183,7 +185,7 @@ def altBAnn(lObj, fLst, aWidth, cutoff, outFName) :
     synth.add(f1) # Fix first announcement
     resAnnI.append(ann1I)
   while remHndsB != [] and resb == z3.sat and nAnnB < cutoff:
-    m = solver.model()
+    m = synth.model()
     ann2P = lObj.getTruePropsPrefixedBy(m, 'b')
     ann2I = lObj.getIndices(ann2P)
     ann2I.sort()    
@@ -197,8 +199,7 @@ def altBAnn(lObj, fLst, aWidth, cutoff, outFName) :
     # ann2 found such that c learns
     # Get the original set of deals for which C knows.
     remDLSI = lObj.getIndices(lObj.getTruePropsPrefixedBy(m, 'd'))
-    # Documenting the solution
-    f= open(outFName, 'a')
+    # Documenting the solutio
     f.write('ann1 Indices : ' + str(ann1I) + '\n')
     f.write('ann2 Indices : ' + str(ann2I) + '\n\n')
     f.write('deals (after ann1;ann2) : \n' + str(remDLSI) + '\n\n')
