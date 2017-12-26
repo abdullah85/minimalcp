@@ -142,21 +142,18 @@ def informAB(lObj, fLst, ann1I, ann2I, outFName) :
 ################################################################
 ####  Keep making progress with B's announcements (upto cutoff)
 ################################################################
-def altBAnn(lObj, fLst, aWidth, cutoff, outFName) :
+def allBAnn(lObj, fLst, fa, fb, fc, aWidth, cutoff, outFName) :
   '''
   fLst consists of all the formulae obtained from either
   a) getSafety_Solver
   b) getStrongSafety_Solver
+  fa, fb, fc denote second order inf requirements for agents a,b,c
+    (possibly obtained by $ fa, fb, fc = getfmlABC(lObj))
   '''
   nD = len(lObj.deals)
-  aP = lObj.ann[a]
-  bP = lObj.ann[b]
-  cP = lObj.ann[c]
   # Since, we're currently looking at one shot protocols.
-  aPass = And(aP[0])
-  bPass = And(bP[0])
+  cP = lObj.ann[c]
   cPass = And(cP[0])
-  fa, fb, fc = getfmlABC(lObj)
   # The solver code initialization
   synth = z3.Solver()
   synth = addToSolver(synth, fLst, True)
@@ -173,8 +170,9 @@ def altBAnn(lObj, fLst, aWidth, cutoff, outFName) :
   synth.add(fc)
   resb = synth.check()
   remHndsB = []
+  for h in lObj.handList:
+    remHndsB.append(h)
   resAnnI = [[],[],[]] # Store all resulting announcements
-  f= open(outFName, 'a')  
   if resb == z3.sat:
     m = synth.model()
     ann1P =  lObj.getTruePropsPrefixedBy(m, 'b')
@@ -185,6 +183,7 @@ def altBAnn(lObj, fLst, aWidth, cutoff, outFName) :
     synth.add(f1) # Fix first announcement
     resAnnI.append(ann1I)
   while remHndsB != [] and resb == z3.sat and nAnnB < cutoff:
+    f = open(outFName, 'a')
     m = synth.model()
     ann2P = lObj.getTruePropsPrefixedBy(m, 'b')
     ann2I = lObj.getIndices(ann2P)
@@ -238,7 +237,7 @@ def altBAnn(lObj, fLst, aWidth, cutoff, outFName) :
     synth.add(a2fml)
     resb = synth.check()
     nAnnB = nAnnB + 1
-  f.close()
+    f.close()
   return (resAnnI[0], resAnnI[1], resAnnI[2])
 
 def writeAnnL(lObj, ann1I, ann2I, ann3L, fName):
