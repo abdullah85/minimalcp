@@ -173,13 +173,16 @@ def allBAnn(lObj, fLst, fa, fb, fc, aWidth, cutoff, outFName) :
   resAnnI = [[],[],[]] # Store all resulting announcements
   if resb == z3.sat:
     m = synth.model()
-    ann1P =  lObj.getTruePropsPrefixedBy(m, 'b')
+    ann1P =  lObj.getTruePropsPrefixedBy(m, 'a')
     ann1I = lObj.getIndices(ann1P)
     ann1I.sort()
     f1 = lObj.getAnnFml(a, 0, ann1I)
     ann1L = lObj.iL2AnnL(ann1I)
     synth.add(f1) # Fix first announcement
-    resAnnI.append(ann1I)
+    resAnnI[0].append(ann1I)
+    f = open(outFName, 'a')
+    f.write('# ann1 Indices : \n' + str(ann1I) + '\n')
+    f.close()
   while remHndsB != [] and resb == z3.sat and nAnnB < cutoff:
     f = open(outFName, 'a')
     m = synth.model()
@@ -196,13 +199,16 @@ def allBAnn(lObj, fLst, fa, fb, fc, aWidth, cutoff, outFName) :
     # ann2 found such that c learns
     # Get the original set of deals for which C knows.
     remDLSI = lObj.getIndices(lObj.getTruePropsPrefixedBy(m, 'd'))
-    # Documenting the solutio
-    f.write('ann1 Indices : ' + str(ann1I) + '\n')
-    f.write('ann2 Indices : ' + str(ann2I) + '\n\n')
-    f.write('deals (after ann1;ann2) : \n' + str(remDLSI) + '\n\n')
-    f.write('Now for C\'s announcement(s), \n' )
+    deals = []
+    for i in remDLSI: deals.append(lObj.deals[i])
+    # Documenting the solution
+    f.write('# ann2 Indices : \n' + str(ann2I) + '\n\n')
+    f.write('# deals (after ann1;ann2) : \n' + str(deals) + '\n\n')
+    f.write('# Now for C\'s announcement(s), \n' )
     ann3L = []
-    # Checkpoint the choice of ann2
+    # Roll back to revoke B's attempt to inform C which was successful.
+    # and onto the part where C must now inform B as well as A.
+    synth.pop()
     synth.push()
     f2 = lObj.getAnnFml(b, 0, ann2I)
     synth.add(f2)
@@ -210,6 +216,7 @@ def allBAnn(lObj, fLst, fa, fb, fc, aWidth, cutoff, outFName) :
     synth.add(fa)
     synth.add(fb)
     resc = synth.check()
+    nAnnC = 0
     while remDLSI != [] and resc == z3.sat:
       m = synth.model()
       dlsCP  = lObj.getTruePropsPrefixedBy(m, 'd')
@@ -220,19 +227,32 @@ def allBAnn(lObj, fLst, fa, fb, fc, aWidth, cutoff, outFName) :
       annCI = lObj.getIndices(annCP)
       annCI.sort()
       ann3L.append(annCI)
-      f.write(str(nAnnC) + ') : ' + str(annCI)) # the current Announcement
-      f.write('\n\t Deals : \n' + str(dlsC) +'\n\n')
-      remDLSI = elimDLI(remDLSI, dlsCI)
+      f.write('# '+str(nAnnC) + ') : \n' + str(annCI) + '\n') # the current Announcement
+      f.write('# Deals : \n' + str(dlsC) +'\n\n')
+      newRem = []
+      for idx in remDLSI:
+        if idx not in dlsCI:
+          newRem.append(idx)
+      remDLSI = newRem
       fml = Or(lObj.dealsBL(remDLSI))
       synth.add(fml)
       resc = synth.check()
       nAnnC = nAnnC + 1
+    # Roll back to undo C's search for informing A as well as B.
+    synth.pop()    
+    # The formulae needed to ensure ann2I is not repeated by B
+    if remDLSI != []:
+      synth.add(Not(And(lObj.getAnnFml('b', 0, ann2I))))
+    # Note that the bad formula is added before push.
+    synth.push()
     resAnnI[2].append(ann3L)
-    # Roll back to the choice of second announcement.
-    synth.pop()
     # Obtain a new ann2 that ensures progress.
-    a2fml = lObj.annBL('b', 0, remHndsB)
-    synth.add(Or(a2fml))
+    bProgress = []
+    for idx in remHndsB:
+      bProgress.append(lObj.ann['b'][0][idx])
+    synth.add(Or(bProgress))
+    # Once again ensure that B's announcement guarantees 2nd order inf for C.
+    synth.add(fc)
     resb = synth.check()
     nAnnB = nAnnB + 1
     f.close()
