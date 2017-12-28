@@ -225,7 +225,7 @@ def writeAnnL(lObj, ann1I, ann2I, ann3L, fName):
   '''
   f = open(fName, 'a')
   f.write('# A\'s announcement :\n')
-  annA = lObj.iL2AnnL(annn1I)
+  annA = lObj.iL2AnnL(ann1I)
   f.write(getAnnStr(annA)+'\n')
   f.write('# B\'s announcement :\n')
   annB = lObj.iL2AnnL(ann2I)
@@ -234,8 +234,8 @@ def writeAnnL(lObj, ann1I, ann2I, ann3L, fName):
   nC = 0
   for annCI in ann3L:
     f.write('# Announcement '+str(nC)+') : \n')
-    annC = getAnnStr(annCI)
-    f.write(getAnnStr(annC) + '\n')
+    annCL = lObj.iL2AnnL(annCI)
+    f.write(getAnnStr(annCL) + '\n')
     nC = nC + 1
   f.close()
 
