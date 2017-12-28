@@ -118,10 +118,10 @@ def genBAnn(lObj, synth, aWidth, fa, fb, fc, bCutOff, cCutOff, fPrefix):
     f= open(outFName, 'a')
     f.write('ann1 Indices : ' + str(ann1I) + '\n')
     f.write('ann2 Indices : ' + str(ann2I) + '\n\n')
-    f2 = Lobj.getAnnFml('b', 0, ann2I)
+    f2 = lObj.getAnnFml('b', 0, ann2I)
     synth.push()
     synth.add(f2)
-    x, y, ann3IL = informABwSynth(lObj, synth, f, cCutOff, deals)
+    x, y, ann3IL = informABwSynth(lObj, synth, f, cCutOff)
     resAnnL.append(ann2I, ann3IL)
     fName = fPrefix + '-ann-' + str(nAnnB) + '.py'
     writeAnnL(lObj, ann1I, ann2I, ann3IL, fName)
@@ -138,13 +138,15 @@ def genBAnn(lObj, synth, aWidth, fa, fb, fc, bCutOff, cCutOff, fPrefix):
 ################################################################
 ####    Onto the part where C informs A,B.
 ################################################################
-def informABwSynth(lObj, synth, f, cCutOff, remDLSI) :
+def informABwSynth(lObj, synth, f, cCutOff) :
   '''
   fLst consists of all the formulae obtained from either
   a) getSafety_Solver + getFmlAB()
   b) getStrongSafety_Solver + getFmlAB()
   c) other formulae, blocking certain announcements.
   '''
+  m = synth.model() # synth must be sat here
+  remDLSI = lObj.getIndices(lObj.getTruePropsPrefixedBy(m, 'd'))
   # Documenting the solution
   f.write('deals (after ann1;ann2) : \n' + str(remDLSI) + '\n\n')
   f.write('Now for C\'s announcement(s), \n' )
@@ -164,13 +166,17 @@ def informABwSynth(lObj, synth, f, cCutOff, remDLSI) :
     ann3L.append(annCI)
     f.write(str(nAnnC) + ') : ' + str(annCI)) # the current Announcement
     f.write('\n\t Deals : \n' + str(dlsC) +'\n\n')
-    remDLSI = elimDLI(remDLSI, dlsCI)
+    newDLSI = []
+    for idx in remDLSI:
+      if idx not in dlsCI:
+        newDLSI.append(idx)        
+    remDLSI = newDLSI
     fml = Or(lObj.dealsBL(remDLSI))
     synth.add(fml)
     res = synth.check()
     nAnnC = nAnnC + 1
   f.close()
-  return (ann1I, ann2I, ann3L)
+  return ann3L
 
 def informAB(lObj, fLst, ann1I, ann2I, outFName, cCutOff) :
   '''
