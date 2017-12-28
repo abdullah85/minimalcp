@@ -34,6 +34,12 @@ def getStrongSafety_Solver(lObj):
   fLst.append(strongFml)
   return solver,fLst
 
+def getfmlABC(lObj):
+  fa = getAgtFml(lObj, 'a')
+  fb = getAgtFml(lObj, 'b')
+  fc = getAgtFml(lObj, 'c')
+  return (fa,fb, fc)
+
 def initSolver4KC(lObj, solver, aWidth):
   '''
   Add constraints to the solver for ensuring that
@@ -84,20 +90,94 @@ def run2KC(lObj, solver):
       deals.append(lObj.deals[i])
   return (ann1I, ann2I, deals)
 
-def getfmlABC(lObj):
-  fa = getAgtFml(lObj, 'a')
-  fb = getAgtFml(lObj, 'b')
-  fc = getAgtFml(lObj, 'c')
-  return (fa,fb, fc)
+def genBAnn(lObj, synth, aWidth, fa, fb, fc, bCutOff, cCutOff, fPrefix):
+  '''
+  synth is the solver with all required constraints 
+           (to block unwanted results).
+  '''
+  nD = len(lObj.deals)
+  cP = lObj.ann[c]
+  # Since, we're currently looking at one shot protocols.
+  cPass = And(cP[0])
+  synth.push() # Breakpoint for the first announcement
+  aWFml  = lObj.restrictWidth('a', aWidth)
+  synth.add(aWFml)
+  synth.add(lObj.possibleDeals[0])
+  synth.add(fc)
+  synth.add(cPass)
+  ann1I, ann2I, deals = run2KC(lObj, synth)
+  synth.pop() # Unroll the constraints for first announcement.
+  f1 = lObj.getAnnFml('a', 0, ann1I)
+  # Fix first announcement by A for the rest of the search.
+  synth.add(f1)
+  resAnn = []
+  resAnn.append(ann1I)
+  nAnnB = 0
+  while nAnnB < bCutOff and deals != []: # deals == [] when synth is unsat
+    outFName = fPrefix + str(nAnnB) + '.py'
+    f= open(outFName, 'a')
+    f.write('ann1 Indices : ' + str(ann1I) + '\n')
+    f.write('ann2 Indices : ' + str(ann2I) + '\n\n')
+    f2 = Lobj.getAnnFml('b', 0, ann2I)
+    synth.push()
+    synth.add(f2)
+    x, y, ann3IL = informABwSynth(lObj, synth, f, cCutOff, deals)
+    resAnnL.append(ann2I, ann3IL)
+    fName = fPrefix + '-ann-' + str(nAnnB) + '.py'
+    writeAnnL(lObj, ann1I, ann2I, ann3IL, fName)
+    synth.pop()
+    synth.add( Not(f2) ) # Block the above announcement by B
+    # The following checks how else B could respond.
+    synth.push()
+    synth.add(fc)
+    ann1I, ann2I, deals = run2KC(lObj, synth)
+    synth.pop() # remove fc
+    nAnnB = nAnnB + 1
+  return resAnn
 
 ################################################################
 ####    Onto the part where C informs A,B.
 ################################################################
-def informAB(lObj, fLst, ann1I, ann2I, outFName) :
+def informABwSynth(lObj, synth, f, cCutOff, remDLSI) :
   '''
   fLst consists of all the formulae obtained from either
   a) getSafety_Solver + getFmlAB()
   b) getStrongSafety_Solver + getFmlAB()
+  c) other formulae, blocking certain announcements.
+  '''
+  # Documenting the solution
+  f.write('deals (after ann1;ann2) : \n' + str(remDLSI) + '\n\n')
+  f.write('Now for C\'s announcement(s), \n' )
+  nAnnC = 0
+  ann3L = []
+  res = synth.check()
+  while remDLSI != [] and res == z3.sat and nAnnC < cCutOff:
+    m = synth.model()
+    dlsCP  = lObj.getTruePropsPrefixedBy(m, 'd')
+    dlsCI = lObj.getIndices(dlsCP)
+    dlsC = []
+    for i in dlsCI:    
+      dlsC.append( lObj.deals[i] )
+    annCP = lObj.getTruePropsPrefixedBy(m, 'c')
+    annCI = lObj.getIndices(annCP)
+    annCI.sort()
+    ann3L.append(annCI)
+    f.write(str(nAnnC) + ') : ' + str(annCI)) # the current Announcement
+    f.write('\n\t Deals : \n' + str(dlsC) +'\n\n')
+    remDLSI = elimDLI(remDLSI, dlsCI)
+    fml = Or(lObj.dealsBL(remDLSI))
+    synth.add(fml)
+    res = synth.check()
+    nAnnC = nAnnC + 1
+  f.close()
+  return (ann1I, ann2I, ann3L)
+
+def informAB(lObj, fLst, ann1I, ann2I, outFName, cCutOff) :
+  '''
+  fLst consists of all the formulae obtained from either
+  a) getSafety_Solver + getFmlAB()
+  b) getStrongSafety_Solver + getFmlAB()
+  c) other formulae, blocking certain announcements.
   '''
   # for obtaining C's announcements that indicate how he can inform others
   synth = z3.Solver()
@@ -118,8 +198,8 @@ def informAB(lObj, fLst, ann1I, ann2I, outFName) :
   f.write('ann2 Indices : ' + str(ann2I) + '\n\n')
   f.write('deals (after ann1;ann2) : \n' + str(remDLSI) + '\n\n')
   f.write('Now for C\'s announcement(s), \n' )
-  ann3L = []
-  while remDLSI != [] and res == z3.sat:
+  ann3L = []  
+  while remDLSI != [] and res == z3.sat and nAnnC < cCutOff:
     m = synth.model()
     dlsCP  = lObj.getTruePropsPrefixedBy(m, 'd')
     dlsCI = lObj.getIndices(dlsCP)
@@ -138,6 +218,37 @@ def informAB(lObj, fLst, ann1I, ann2I, outFName) :
     nAnnC = nAnnC + 1
   f.close()
   return (ann1I, ann2I, ann3L)
+
+def writeAnnL(lObj, ann1I, ann2I, ann3L, fName):
+  '''
+  Write out the actual announcements in full form.
+  '''
+  f = open(fName, 'a')
+  f.write('# A\'s announcement :\n')
+  annA = lObj.iL2AnnL(annn1I)
+  f.write(getAnnStr(annA)+'\n')
+  f.write('# B\'s announcement :\n')
+  annB = lObj.iL2AnnL(ann2I)
+  f.write(getAnnStr(annB) + '\n')
+  f.write('# C\'s announcements :\n')
+  nC = 0
+  for annCI in ann3L:
+    f.write('# Announcement '+str(nC)+') : \n')
+    annC = getAnnStr(annCI)
+    f.write(getAnnStr(annC) + '\n')
+    nC = nC + 1
+  f.close()
+
+def getAnnStr(annL):
+  resStr = '[\n'
+  for disj in annL:
+    resStr = resStr+'  '+str(disj)+',\n'
+  resStr = resStr+']\n'
+  return resStr
+
+################################################################
+####    Buggy code follows ...
+################################################################
 
 ################################################################
 ####  Keep making progress with B's announcements (upto cutoff)
@@ -258,33 +369,13 @@ def allBAnn(lObj, fLst, fa, fb, fc, aWidth, cutoff, outFName) :
     f.close()
   return (resAnnI[0], resAnnI[1], resAnnI[2])
 
-def writeAnnL(lObj, ann1I, ann2I, ann3L, fName):
-  '''
-  Write out the actual announcements in full form.
-  '''
-  f = open(fName, 'a')
-  f.write('# A\'s announcement :\n')
-  annA = lObj.iL2AnnL(annn1I)
-  f.write(getAnnStr(annA)+'\n')
-  f.write('# B\'s announcement :\n')
-  annB = lObj.iL2AnnL(ann2I)
-  f.write(getAnnStr(annB) + '\n')
-  f.write('# C\'s announcements :\n')
-  nC = 0
-  for annCI in ann3L:
-    f.write('# Announcement '+str(nC)+') : \n')
-    annC = getAnnStr(annCI)
-    f.write(getAnnStr(annC) + '\n')
-    nC = nC + 1
-  f.close()
-
 def writeAnnBL(lObj, ann1I, resBC, fName):
   '''
   Write out the actual announcements in full form.
   '''
   f = open(fName, 'a')
   f.write('# A\'s announcement :\n')
-  annA = lObj.iL2AnnL(annn1I)
+  annA = lObj.iL2AnnL(ann1I)
   f.write(getAnnStr(annA)+'\n')
   i = 0
   ann2L = resBC[1]
@@ -297,14 +388,9 @@ def writeAnnBL(lObj, ann1I, resBC, fName):
     ann3L = resBC[2][i]
     for annCI in ann3L:
       f.write('# Announcement '+str(nC)+') : \n')
-      annC = getAnnStr(annCI)
+      annC = lObj.iL2AnnL(annCI)
+      print getAnnStr(annC)
       f.write(getAnnStr(annC) + '\n')
       nC = nC + 1
     i = i + 1
   f.close()
-
-def getAnnStr(annL):
-  resStr = '[\n'
-  for disj in annL:
-    resStr = resStr+'  '+str(disj)+',\n'
-  resStr = resStr+']\n'
