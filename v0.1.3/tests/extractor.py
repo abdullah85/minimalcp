@@ -72,6 +72,7 @@ def run2KC(lObj, solver):
   res = solver.check()
   deals = []
   ann1I, ann2I = [], []
+  dListI = []
   if res == z3.sat:
     m = solver.model()
     ann1P = lObj.getTruePropsPrefixedBy(m, 'a')
@@ -90,14 +91,16 @@ def run2KC(lObj, solver):
       deals.append(lObj.deals[i])
   return (ann1I, ann2I, dListI)
 
+hashes = '################################################################'
 def genAAnn(lObj, synth, aWidth, sInfTriple, cuttoffTriple, fPrefix):
   fa,fb,fc = sInfTriple
   aCutoff, bCutOff, cCutOff = cutoffTriple
   nAnnA = 0
   resAnn = []
+  remDLSI = range(0, len(lObj.deals))
   while nAnnA < aCutoff:
     resB = genBAnn(lObj, synth, aWidth, fa, fb, fc, bCutoff, cCutoff, fPrefix)
-    ann1 = resB[0]
+    ann1I = resB[0]
     resAnn.append(resB)
     nAnnA = nAnnA + 1
   return resAnn
@@ -129,31 +132,41 @@ def genBAnn(lObj, synth, aWidth, fa, fb, fc, bCutOff, cCutOff, fPrefix):
     return []
   m = synth.model()
   remDLSI = lObj.getIndices(lObj.getTruePropsPrefixedBy(m, 'd'))
+  print 'Originally : ', str(remDLSI)
   resAnn = []
   resAnn.append(ann1I)
   nAnnB = 0
-  while nAnnB < bCutOff and remDLSI != []: # deals == [] when synth is unsat
-    outFName = fPrefix + str(nAnnB) + '.py'
+  outMessage = ''
+  annMessage = ''
+  while nAnnB < bCutOff and remDLSI != []:
+    outFName = fPrefix + '-' + str(nAnnB) + '.py'
     f= open(outFName, 'a')
-    f.write('# ann1 Indices : \n' + str(ann1I) + '\n')
-    f.write('# ann2 Indices : \n' + str(ann2I) + '\n\n')
-    f2 = lObj.getAnnFml('b', 0, ann2I)
+    outMessage = outMessage + '# ann1 Indices : \n' + str(ann1I) + '\n'
+    outMessage = outMessage + '# ann2 Indices : \n' + str(ann2I) + '\n\n'
+    f.write(outMessage)
     synth.push()
+    f2 = lObj.getAnnFml('b', 0, ann2I)
     synth.add(f2)
-    ann3IL = informABwSynth(lObj, synth, f, cCutOff)
-    resAnn.append((ann2I, ann3IL))
-    fName = fPrefix + '-ann-' + str(nAnnB) + '.py'
-    writeAnnL(lObj, ann1I, ann2I, ann3IL, fName)
     dlsBI = []
-    if synth.check() == z3.sat:
+    resb = synth.check()
+    if resb == z3.sat:
+      print 'sat'
       m = synth.model()
       dlsBI = lObj.getIndices(lObj.getTruePropsPrefixedBy(m, 'd'))
+    print dlsBI
+    ann3IL, cOut = informABwSynth(lObj, synth, f, cCutOff)
+    outMessage = outMessage + cOut
+    resAnn.append((ann2I, ann3IL))
+    fName = fPrefix + '-ann-' + str(nAnnB) + '.py'
+    aMsg = writeAnnL(lObj, ann1I, ann2I, ann3IL, fName)
+    annMessage = annMessage + '\n'+hashes+'\n'+ aMsg
     synth.pop()
     newDLSI = []
     for idx in remDLSI:
       if idx not in dlsBI:
         newDLSI.append(idx)        
     remDLSI = newDLSI
+    print 'Remaining : ', str(remDLSI)
     synth.add( Or(lObj.dealsBL(remDLSI)) ) # Ensure B makes progress.
     # The following checks how else B could respond.
     synth.push()
@@ -161,7 +174,7 @@ def genBAnn(lObj, synth, aWidth, fa, fb, fc, bCutOff, cCutOff, fPrefix):
     ann1I, ann2I, deals = run2KC(lObj, synth)
     synth.pop() # remove fc
     nAnnB = nAnnB + 1
-  return resAnn
+  return resAnn, outMessage, annMessage
 
 ################################################################
 ####    Onto the part where C informs A,B.
@@ -175,13 +188,14 @@ def informABwSynth(lObj, synth, f, cCutOff) :
   '''
   m = synth.model() # synth must be sat here
   remDLSI = lObj.getIndices(lObj.getTruePropsPrefixedBy(m, 'd'))
-  # Documenting the solution  
-  f.write('# deals (after ann1;ann2) : \n')
+  # Documenting the solution
+  outMessage = '# deals (after ann1;ann2) : \n'
+  outMessage = outMessage + '['
   for idx in remDLSI :
     currDeal = lObj.deals[idx]
-    f.write('  '+str(currDeal) + ',\n')
-  f.write(']\n\n')
-  f.write('# Now for C\'s announcement(s), \n' )
+    outMessage = outMessage + '  ' + str(currDeal) + ',\n'
+  outMessage = outMessage + ']\n\n'
+  outMessage = outMessage + '# Now for C\'s announcement(s), \n'
   nAnnC = 0
   ann3L = []
   res = synth.check()
@@ -196,12 +210,12 @@ def informABwSynth(lObj, synth, f, cCutOff) :
     annCI = lObj.getIndices(annCP)
     annCI.sort()
     ann3L.append(annCI)
-    f.write('# ' + str(nAnnC) + ') : \n' + str(annCI)+'\n') # the current Announcement
-    f.write('# \n  Deals : \n' )
+    outMessage = outMessage + '# ' + str(nAnnC) + ') : \n' + str(annCI)+'\n'
+    outMessage = outMessage + '\n  Deals : \n'
     for idx in dlsCI :
       currDeal = lObj.deals[idx]
-      f.write(str(currDeal) + ',\n')
-    f.write(']\n\n')
+      outMessage = outMessage + (str(currDeal) + ',\n')
+    outMessage = outMessage + ']\n\n'
     newDLSI = []
     for idx in remDLSI:
       if idx not in dlsCI:
@@ -211,8 +225,43 @@ def informABwSynth(lObj, synth, f, cCutOff) :
     synth.add(fml)
     res = synth.check()
     nAnnC = nAnnC + 1
+  f.write(outMessage)
   f.close()
-  return ann3L
+  return ann3L, outMessage
+
+def writeAnnL(lObj, ann1I, ann2I, ann3L, fName):
+  '''
+  Write out the actual announcements in full form.
+  '''
+  f = open(fName, 'a')
+  annA = lObj.iL2AnnL(ann1I)
+  annB = lObj.iL2AnnL(ann2I)
+  aMsg = ''
+  aMsg = aMsg + '(a, ' + getAnnStr(annA)+'\n\n'
+  aMsg = aMsg + '(b, ' + getAnnStr(annB)+'\n\n'
+  nC = 0
+  for annCI in ann3L:
+    annCL = lObj.iL2AnnL(annCI)
+    aMsg = aMst +'(c, '+getAnnStr(annCL) + ''
+    nC = nC + 1
+  f.write(aMsg)
+  f.close()
+  return aMsg
+
+def getAnnStr(annL):
+  resStr = '['
+  i = 0
+  while i < len(annL):
+    disj = annL[i]
+    resStr = resStr+'     '+str(disj)
+    if i != len(annL) - 1:
+      resStr = resStr + ',\n'
+  resStr = resStr+'])\n\n'
+  return resStr
+
+################################################################
+####    Buggy code follows ...
+################################################################
 
 def informAB(lObj, fLst, ann1I, ann2I, outFName, cCutOff) :
   '''
@@ -264,37 +313,6 @@ def informAB(lObj, fLst, ann1I, ann2I, outFName, cCutOff) :
     nAnnC = nAnnC + 1
   f.close()
   return (ann1I, ann2I, ann3L)
-
-def writeAnnL(lObj, ann1I, ann2I, ann3L, fName):
-  '''
-  Write out the actual announcements in full form.
-  '''
-  f = open(fName, 'a')
-  f.write('# A\'s announcement :\n')
-  annA = lObj.iL2AnnL(ann1I)
-  f.write(getAnnStr(annA)+'\n')
-  f.write('# B\'s announcement :\n')
-  annB = lObj.iL2AnnL(ann2I)
-  f.write(getAnnStr(annB) + '\n')
-  f.write('# C\'s announcements :\n')
-  nC = 0
-  for annCI in ann3L:
-    f.write('# Announcement '+str(nC)+') : \n')
-    annCL = lObj.iL2AnnL(annCI)
-    f.write(getAnnStr(annCL) + '\n')
-    nC = nC + 1
-  f.close()
-
-def getAnnStr(annL):
-  resStr = '[\n'
-  for disj in annL:
-    resStr = resStr+'  '+str(disj)+',\n'
-  resStr = resStr+']\n'
-  return resStr
-
-################################################################
-####    Buggy code follows ...
-################################################################
 
 ################################################################
 ####  Keep making progress with B's announcements (upto cutoff)
