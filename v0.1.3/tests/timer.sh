@@ -1,4 +1,4 @@
-date1=`date +%s`;
+ date1=`date +%s`;
 echo
 while true;
 do
