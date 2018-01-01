@@ -111,11 +111,14 @@ def genAAnn(lObj, synth, aWidth, sInfTriple, cutOffTriple, fPrefix):
     # Fix first announcement by A for the rest of the search.
     synth.add( Not(f1) )
     resAnn.append(resB)
-    outMessage = outMessage + '\n' + hashes + '\n' + hashes + '\n'
-    outMessage = outMessage + hashes + '\n\n'
+    outMessage = outMessage + '\n' + hashes + '\n' 
+    outMessage = outMessage + '\n' + hashes + '\n' 
+    outMessage = outMessage + '\n' + hashes + '\n\n'    
+    outMessage = outMessage + outMsg
     annMessage = annMessage + '\n' + hashes + '\n'
     annMessage = annMessage + '\n' + hashes + '\n'
     annMessage = annMessage + '\n' + hashes + '\n'
+    annMessage = annMessage + annMsg
     nAnnA = nAnnA + 1
   return resAnn, outMessage, annMessage
 
