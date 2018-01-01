@@ -120,6 +120,21 @@ def genAAnn(lObj, synth, aWidth, sInfTriple, cutOffTriple, fPrefix):
     annMessage = annMessage + '\n' + hashes + '\n'
     annMessage = annMessage + annMsg
     nAnnA = nAnnA + 1
+    fName1 = fPrefix + '-a-'+str(nAnnA)+'.txt'
+    fName2 = fPrefix + '-a-ann'+str(nAnnA)+'.txt'    
+    f1 = open(fName1, 'w')
+    f1.write(outMessage)
+    f2 = open(fName2, 'w')    
+    f2.write(annMessage)
+    f1.close(); f2.close()
+  fName = fPrefix + '-all'+'.txt'
+  f = open(fName, 'w')
+  f.write(outMessage)
+  f.close()
+  fName = fPrefix+'ann'+'.txt'
+  f = open(fName, 'w')
+  f.write(annMessage)
+  f.close()
   return resAnn, outMessage, annMessage
 
 def genBAnn(lObj, synth, aWidth, sInfFml, cutOffL, fPrefix):
