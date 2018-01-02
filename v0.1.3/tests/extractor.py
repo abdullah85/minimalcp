@@ -106,6 +106,8 @@ def genAAnn(lObj, synth, aWidth, sInfTriple, cutOffTriple, fPrefix):
     synth.push()
     resB, outMsg, annMsg = genBAnn(lObj, synth, aWidth, sInfFml, fwdCutOff, fPrefix)
     synth.pop()
+    if resB == []:
+      return resAnn, outMessage, annMessage
     ann1I = resB[0]
     f1 = lObj.getAnnFml('a', 0, ann1I)
     # Fix first announcement by A for the rest of the search.
@@ -127,11 +129,11 @@ def genAAnn(lObj, synth, aWidth, sInfTriple, cutOffTriple, fPrefix):
     f2 = open(fName2, 'w')    
     f2.write(annMessage)
     f1.close(); f2.close()
-  fName = fPrefix + '-all'+'.txt'
+  fName = fPrefix + '-all.txt'
   f = open(fName, 'w')
   f.write(outMessage)
   f.close()
-  fName = fPrefix+'ann'+'.txt'
+  fName = fPrefix+'-ann.txt'
   f = open(fName, 'w')
   f.write(annMessage)
   f.close()
@@ -151,7 +153,8 @@ def genBAnn(lObj, synth, aWidth, sInfFml, cutOffL, fPrefix):
   synth.push() # Breakpoint for the first announcement
   aWFml = lObj.restrictWidth('a', aWidth)
   debug = fPrefix.startswith('debug')
-  print 'debug : ', debug
+  if debug:
+    print 'debug : ', debug
   synth.add(aWFml)
   synth.add(lObj.possibleDeals[0])
   synth.add(fc)
@@ -200,7 +203,8 @@ def genBAnn(lObj, synth, aWidth, sInfFml, cutOffL, fPrefix):
       dlsBI = lObj.getIndices(lObj.getTruePropsPrefixedBy(m, 'd'))
     else :
       print 'unsat (models not attainable)'
-    print dlsBI
+    if debug:
+      print dlsBI
     ann3IL, cOut = informABwSynth(lObj, synth, f, cCutOff)
     if debug:
       print 'Obtained run'
@@ -216,7 +220,8 @@ def genBAnn(lObj, synth, aWidth, sInfFml, cutOffL, fPrefix):
       if idx not in dlsBI:
         newDLSI.append(idx)
     remDLSI = newDLSI
-    print 'Remaining : ', str(remDLSI)
+    if debug:
+      print 'Remaining : ', str(remDLSI)
     synth.add( Or(lObj.dealsBL(remDLSI)) ) # Ensure B makes progress.
     # The following checks how else B could respond.
     synth.push()
