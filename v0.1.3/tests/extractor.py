@@ -92,6 +92,74 @@ def run2KC(lObj, solver):
   return (ann1I, ann2I, dListI)
 
 hashes = '################################################################'
+lineHashes = hashes+'\n\n'
+doubleHashes = lineHashes + lineHashes
+tripleHashes = lineHashes + doubleHashes
+quadHashes =  doubleHashes + doubleHashes
+
+def getRunL(annMsg):
+  aL1 = annMsg.split(quadHashes)[1:]
+  aL2 = []
+  for ln in aL1:
+    lnLst = ln.split(lineHashes)
+    for l in lnLst:
+      aL2.append(l)
+  runL = []
+  for ln in aL2:
+    rn = []
+    lnLst = ln.split('(')[1:]
+    for ann in lnLst:
+      rn.append(eval('('+ann))
+    runL.append(rn)
+  return runL
+
+def writeRunL(fName, runL):
+  f = open(fName, 'w')
+  for r in runL:
+    f.write('[\n')
+    for ann in r:
+      f.write('  '+str(ann))
+      if ann != r[-1]:
+        f.write(',\n')
+    f.write('\n]\n\n')
+  f.close()
+
+def readRunL(fTxt):
+  runL = []
+  runStrL = fTxt.split('\n\n')[:-1]
+  for runStr in runStrL:
+    runL.append(eval(runStr))
+  return runL
+
+import cpState as cps; import cpUtil  as ut ;
+def getStateLst(runL):
+  dealLst = [4,4,4,0]; agtLst = ['a','b', 'c', 'e']; 
+  d0 = ut.minDeal(dealLst, agtLst, range(12)); 
+  s0 = cps.cpState(dealLst, agtLst, d0, ['a', 'b', 'c'], 'e');
+  stateL = []
+  for r in runL:
+    s1 = s0.execRun(r)
+    stateL.append(s1)
+  return stateL
+
+def getInfo(stateL):
+  infL = []
+  for s in stateL:
+    infL.append(s.getInfo())
+  return infL
+
+def getPosL(stateL, eaves):
+  posL = []
+  for s in stateL:
+    posL.append(s.getPosK(eaves))
+  return posL
+
+def getNegL(stateL, eaves):
+  negL = []
+  for s in stateL:
+    negL.append(s.getNegK(eaves))
+  return negL
+
 def genAAnn(lObj, synth, aWidth, sInfTriple, cutOffTriple, fPrefix):
   fa,fb,fc = sInfTriple
   aCutoff, bCutOff, cCutOff = cutOffTriple
@@ -185,12 +253,14 @@ def genBAnn(lObj, synth, aWidth, sInfFml, cutOffL, fPrefix):
   nAnnB = 0
   outMessage = ''
   annMessage = ''
+  fName = fPrefix + 'b-latest.py'
+  # Save the latest intermediate version of runs generated
+  #  Starts here.
+  f = open(fName, 'w')
   while nAnnB < bCutOff and remDLSI != []:
     outFName = fPrefix + '-' + str(nAnnB) + '.py'
-    f= open(outFName, 'a')
     outMessage = outMessage + '# ann1 Indices : \n' + str(ann1I) + '\n'
     outMessage = outMessage + '# ann2 Indices : \n' + str(ann2I) + '\n\n'
-    f.write(outMessage)
     synth.push()
     f2 = lObj.getAnnFml('b', 0, ann2I)
     synth.add(f2)
@@ -205,13 +275,13 @@ def genBAnn(lObj, synth, aWidth, sInfFml, cutOffL, fPrefix):
       print 'unsat (models not attainable)'
     if debug:
       print dlsBI
+    f.write(hashes+'\n'+hashes+'\n'+str(nAnnB)+'\n')
     ann3IL, cOut = informABwSynth(lObj, synth, f, cCutOff)
     if debug:
       print 'Obtained run'
       print 'len(ann3IL) : ', len(ann3IL)
     outMessage = outMessage + cOut
     resAnn.append((ann2I, ann3IL))
-    fName = fPrefix + '-ann-' + str(nAnnB) + '.py'
     aMsg = writeAnnL(lObj, ann1I, ann2I, ann3IL, fName)
     annMessage = annMessage + '\n'+hashes+'\n\n'+ aMsg
     synth.pop()
@@ -233,57 +303,8 @@ def genBAnn(lObj, synth, aWidth, sInfFml, cutOffL, fPrefix):
     nAnnB = nAnnB + 1
     if debug:
       print
+  f.close()
   return resAnn, outMessage, annMessage
-
-def getRunListA(lObj, synth, aWidth, sInfL, cutOffL, fPref, debug):
-  fPrefix = fPref + '-a-0'
-  synth.push()
-  aCutOff, bc, cc =  cutOffL
-  rList, rMesgB = getRunListB(lObj, synth, aWidth, sInfL, (bc,cc), fPrefix)
-  nAnnA = 0
-  runList = []
-  resultMessage = ''
-  while rList != [] and nAnnA < aCutOff:
-    fPrefix = fPref + '-a-' + str(nAnnA)
-    rList, rMesgB = getRunListB(lObj, synth, aWidth, sInfL, (bc,cc), fPrefix, debug)
-    if rList != []:
-      runList = runList +  rList
-      aAnnL = rList[0][1]
-      fBAnn = lObj.getAnnFml('a', 0, aAnnL)
-      synth.add( Not(fbAnn) )
-    nAnnA = nAnnA + 1
-  return runList, resultMessage
-
-def getRunListB(lObj, synth, aWidth, sInfL, cutOffL, fPref, debug):
-  '''
-  Given lObj, and cutOffL = (bCutOff, cCutOff) return
-  '''
-  fa,fb,fc = sInfL
-  bCutOff, cCutOff = cutOffL
-  fPrefix = fPref + '-b-0'
-  synth.push()
-  resL, m1, m2 = genBAnn(lObj, synth, aWidth, fa, fb, fc, bCutOff, cCutOff, fPrefix)
-  nRuns = 1
-  resultMsg = ''
-  runList = []
-  while resL != [] and nRuns < bCutOff:
-    fPrefix = fPref + '-b-' + str(nRuns)
-    resL, m1, m2 = genBAnn(lObj, synth, 5, fa, fb, fc, 5, 500, fPrefix)
-    runL = getRuns(lObj, m2)
-    if runL != []:
-      runList = runList + runL
-      bAnnL = runL[1][1]
-      fBAnn = lObj.getAnnFml('b', 0, bAnnL)
-      synth.add( Not(fbAnn) )
-      if debug:
-        print runL
-        print
-      nRuns = nRuns + 1
-      resultMsg = resultMsg + '\n'+ hashes +'\n\n' + m2
-  synth.pop()
-  if debug:
-    print 'getRunListB, nRuns : ', nRuns
-  return runList, resultMsg
 
 def getRuns(lObj, msg):
   '''
@@ -413,7 +434,6 @@ def informABwSynth(lObj, synth, f, cCutOff) :
     res = synth.check()
     nAnnC = nAnnC + 1
   f.write(outMessage)
-  f.close()
   return ann3L, outMessage
 
 def writeAnnL(lObj, ann1I, ann2I, ann3L, fName):
@@ -421,6 +441,7 @@ def writeAnnL(lObj, ann1I, ann2I, ann3L, fName):
   Write out the actual announcements in full form.
   '''
   f = open(fName, 'a')
+  f.write('\n'+hashes+'\n')
   annA = lObj.iL2AnnL(ann1I)
   annB = lObj.iL2AnnL(ann2I)
   aMsg = ''
