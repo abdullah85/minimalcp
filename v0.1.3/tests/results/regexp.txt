@@ -1,0 +1,9 @@
+
+# For getting consecutive c announcements
+
+(
+defun search ()
+"searching"
+(interactive)
+(re-search-forward "c, ")
+)
