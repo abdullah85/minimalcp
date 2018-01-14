@@ -169,8 +169,7 @@ def getRunsColPosK(startState, runLst, agt):
 
 def getRunsColumns(state, runL, interval, agt):
   '''
-  split runs up into intervals
-  and return a list of columns
+  split runs up into intervals and return a list of columns
   '''
   rL = []
   i = 0
@@ -187,7 +186,7 @@ def getRunsColumns(state, runL, interval, agt):
     columns.append( getRunsColPosK(state, rList, agt) )
   return columns
 
-def getLatexPosK(columns, colHeaders, agt):
+def getLatexPosK(columns, colHeaders):
   '''
   Obtain table from columns and colHeaders information
   '''
@@ -222,3 +221,18 @@ def getLatexPosK(columns, colHeaders, agt):
   footer = footer + '\end{tabular}\n\n'
   tableStr = header + body + footer
   return tableStr
+
+def getTableFor(i, interval, cutOff, nRuns, fName):
+  s0 = getState(i)
+  d0 = s0.deal
+  rL = getRun1List2(d0, 2, cutOff)
+  rL = rL[:nRuns]
+  cols = getRunsColumns(s0, rL, interval, 'e')
+  colHeaders = []
+  for i in range(len(cols)):
+    colHeaders.append(i)
+  tabTex = getLatexPosK(columns, colHeaders)
+  f =  open(fName, 'w')
+  f.write(tabTex)
+  f.close()
+  return tabTex
