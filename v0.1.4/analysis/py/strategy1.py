@@ -2,175 +2,12 @@ import cpState as cps;
 import cpUtil  as ut;
 import random  as rand;
 
-def getCards(deck, n):
-  '''
-  Get n distinct cards randomly from deck
-  '''
-  if len(deck) < n:
-    return []
-  rangeList = []
-  for c in deck:
-    rangeList.append(c)
-  cardsL = []
-  for i in range(n):
-    maxId = len(rangeList) - 1
-    idx = rand.randint(0, maxId)
-    cardsL.append( rangeList[idx])
-    rangeList.pop(idx)
-  return cardsL
-
-def getStrategy1(deal, agt):
-  '''
-  Return a possible announcement sequence for agt at deal.
-  Since announcements are independent of actual history, we
-  can generate the strategy apriori.
-  '''
-  hand = deal[agt]
-  rest = []
-  for agt1 in deal.keys():
-    if agt1 != agt:
-      rest = rest + deal[agt1]  
-  X = getCards(rest, 2)
-  annL1 = ut.allHands(len(hand), hand + X)
-  if rand.randint(0,1) == 0: 
-    X.pop() # drop an element of X
-  annL2 = ut.allHands(len(hand), hand + X)
-  return [annL1, annL2]    
-
-def getRun1(deal, infAgts):
-  '''
-  Return a possible run of protocol 1 at deal.
-  '''
-  annSequences = {}
-  for agt in infAgts:
-    annSequences[agt] =  getStrategy1(deal, agt)
-  run = []
-  for i in range(2):
-    for agt in infAgts:
-      ann = (agt, annSequences[agt][i])
-      run.append( ann )
-  return run
-
-def getRuns1(deal, infAgts, k, cutoff):
-  '''
-  Get k distinct runs of protocol 1 starting at deal.
-  '''
-  runList = []
-  for i in range(k):
-    currRun = getRun1(deal, infAgts)
-    j = 0
-    while currRun in runList and j < cutoff:
-      currRun = getRun1(deal, infAgts)      
-      j = j + 1
-    if j == cutoff: # give up on obtaining k runs
-      return runList
-    runList.append(currRun)
-  return runList
-
-################################################################
-####       Code relevant for analysis
-################################################################
-def getAgtResult(state, run, agt):
-  '''
-  Ensure that state is initialized to the required deal.
-  Returns a record summarizing info that agt learns after
-  this run.
-  '''
-  result = {}
-  s1 = state.execRun(run)
-  result['pos'] = len(s1.getPosK(agt))
-  result['neg'] = len(s1.getNegK(agt))
-  result['nD']  = len(s1.getAgtDeals(agt))
-  return result
-
-def getEavesRecords(state, runList, eaves):
-  result = []
-  for r in runList:
-    record = getAgtResult(state, r, eaves)
-    result.append(record)
-  if result == []:
-    return []
-  rows = {}
-  keyList = result[0].keys()
-  for key in keyList:
-    rows[key] = []
-    for i in range(len(runList)):
-      rows[key].append(result[i][key])
-  return rows
-
-def getAgtRecords(state, run, agt, dList):
-  '''
-  Given run, what is the distribution of info 
-  for various deals. Basically, compute the various
-  possibilities for 'pos', 'neg', 'nD'.
-  '''
-  result = []
-  for d in dList:
-    state.deal = d
-    result.append(getAgtResult(state, run, agt))
-  if result == []:
-    return  []
-  rows = {}
-  keyLst = result[0].keys()
-  for k in keyLst:
-    rows[k] = []
-    for i in range(len(dList)):
-      rows[k].append(result[i][k])
-  return rows
-
-def getEavesTable(state, eaves, runLst, keyLst):
-  rows = getEavesRecords(state, runLst, eaves)
-  tabTex = getTable(rows, keyLst, 'r')
-  return tabTex
-
-def getAgtTable(state, eaves, run, agt, keyLst):
-  s1 = state.execRun(run)
-  dLst = s1.getAgtDeals(eaves)
-  rows = getAgtRecords(state, run, agt, dLst)
-  tabTex = getTable(rows, keyLst, 'd')
-  return tabTex
-
-def getAgtTables(state, eaves, run, agtLst, keyLst, sep):
-  resTex = ''
-  for agt in agtLst:
-    tabTex = '% Table for '+str(agt) + '\n'
-    tabTex = tabTex + getAgtTable(state, eaves, run, agt, keyLst)
-    resTex = resTex + '\n' + sep + tabTex
-  return resTex
-
-def getTable(rows, keyList, colPref):
-  '''
-  Print the actual latex table given rows and keyList
-  '''
-  if keyList == [] or rows ==[]:
-    return ''
-  k0 = keyList[0]
-  nRuns = len(rows[k0])  
-  header = '\\begin{tabular}{| c | '
-  row1 = '  '
-  for i in range(nRuns):
-    header = header + 'c '
-    row1   = row1 + '& $'+colPref+'_'+str(i)+'$ '
-  header = header + '|}\n \hline\n'
-  row1 = row1 + '\\\\'  
-  header = header + row1 + '\n \\hline'
-  body  = ''
-  for k in keyList:
-    body = body + '\n ' + str(k)
-    for entry in rows[k]:
-      body = body + ' & ' + str(entry) + ' '
-    body = body + '\\\\'
-  footer = '\hline \n\end{tabular}'
-  tableLatex= header + body + footer
-  return tableLatex
-
 ################################################################
 ####    Focus on efficiency. How long does it really take?
 #### a) efficiency
 #### b) coverage (more or all number of runs)
 #### c) non trivial multi rounds?
 ################################################################
-
 def getAnn1ForX(deal, agt, X):
   '''
   '''
@@ -301,3 +138,111 @@ def getRuns1State(i, n, cutoff):
   s = getState(i)
   d = s.deal
   return getRun1List2(d, n, cutoff)
+
+################################################################
+####  Obtaining latex tables (alongwith results)
+################################################################
+def getColPosK(stateList, agt):
+  posK  = {}
+  for state in stateList:
+    nPos = len(state.getPosK('e'))
+    if not nPos in posK:
+      posK[nPos] = 1
+    else:
+      posK[nPos] = posK[nPos] + 1
+  return posK
+
+def getColumnP(startState, runLst, agt):
+  stateL = []
+  s0 = startState
+  for r in runLst:
+    stateL.append(s0.execRun(r))
+  return getColPosK(stateL, agt)
+
+def getTablePosK(state, runL, interval, agt):
+  rL = []
+  i = 0
+  while i < len(runL):
+    j = 0
+    rList = []
+    while j < interval and i < len(runL):
+      rList.append(runL[i])
+      j = j + 1
+      i = i + 1
+    rL.append(rList)
+  columns = []
+  for rList in rL:
+    columns.append(getColumnP(state, rList, agt))
+  return columns
+
+def getLatexPosK(columns, colHeaders, agt):
+  latex = ''
+
+################################################################
+####  TODO : Randomized runs with statistical guarantees.
+################################################################
+
+def getCards(deck, n):
+  '''
+  Get n distinct cards randomly from deck
+  '''
+  if len(deck) < n:
+    return []
+  rangeList = []
+  for c in deck:
+    rangeList.append(c)
+  cardsL = []
+  for i in range(n):
+    maxId = len(rangeList) - 1
+    idx = rand.randint(0, maxId)
+    cardsL.append( rangeList[idx])
+    rangeList.pop(idx)
+  return cardsL
+
+def getStrategy1(deal, agt):
+  '''
+  Return a possible announcement sequence for agt at deal.
+  Since announcements are independent of actual history, we
+  can generate the strategy apriori.
+  '''
+  hand = deal[agt]
+  rest = []
+  for agt1 in deal.keys():
+    if agt1 != agt:
+      rest = rest + deal[agt1]
+  X = getCards(rest, 2)
+  annL1 = ut.allHands(len(hand), hand + X)
+  if rand.randint(0,1) == 0:
+    X.pop() # drop an element of X
+  annL2 = ut.allHands(len(hand), hand + X)
+  return [annL1, annL2]
+
+def getRun1(deal, infAgts):
+  '''
+  Return a possible run of protocol 1 at deal.
+  '''
+  annSequences = {}
+  for agt in infAgts:
+    annSequences[agt] =  getStrategy1(deal, agt)
+  run = []
+  for i in range(2):
+    for agt in infAgts:
+      ann = (agt, annSequences[agt][i])
+      run.append( ann )
+  return run
+
+def getRuns1(deal, infAgts, k, cutoff):
+  '''
+  Get k distinct runs of protocol 1 starting at deal.
+  '''
+  runList = []
+  for i in range(k):
+    currRun = getRun1(deal, infAgts)
+    j = 0
+    while currRun in runList and j < cutoff:
+      currRun = getRun1(deal, infAgts)
+      j = j + 1
+    if j == cutoff: # give up on obtaining k runs
+      return runList
+    runList.append(currRun)
+  return runList

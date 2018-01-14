@@ -1,7 +1,9 @@
 # minimalcp
 
+* Instructions for running on linux
+
 In what follows let $cp denote the location of this folder
-and version be $version (v0.1.3/).
+and version be $version (current version is v0.1.4/).
 
 To run cp version, we need to
 

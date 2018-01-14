@@ -64,43 +64,8 @@ evaluating a run below. In particular, pos refers
 to positive knowledge while neg refers to negative
 knowledge and nD refers to number of deals.
 
-\input{py/safety1-a.tex}
-
-\subsection{Informativity}
-Informativity requirements are again influenced
-by what any agent knows. We evaluate some relevant 
-parameters (restricting to first order) and the results
-are tabulated below. Note that for the same run each
-agent may have a different perspective depending on the
-actual deal.
-
-\input{py/inf1-a.tex}
-
-First of all, note that the deals that are listed
-along the columns denote the set of deals which the
-eavesdropper thinks possible for that run. This also
-ensures that the run is a valid sequence of announcements
-for that deal modulo first order reasoning. We have not
-employed second order reasoning in any of the tables.
-
-Further, note that the runs $r_0, r_2, r_3$ is converging for
-agent $A$ no matter whatever deal we start in. Whereas for
-run $r_2$, we note that the deals $d_4, d_5$ and are not
-informative for run $r_1$. Similarly, note that runs 
-$r_2, r_3, r_4$ are always converging for $B$ while 
-runs $r_0, r_4$ are always converging for $C$.
-
-Partial convergence is possible for $B$ for the
-run $r_0$ while the run $r_3$ partially converges
-for $C$. Using these we can come up with some suitable
-measure to see how far each agent is from learning the
-deal on the worst case as well as on an average.
-For further detailed analysis of the runs,
-we may look at the original runs 
-listed in Section \ref{appdx:exec}.
-
 \newpage
 \appendix
-\input{appendix1}
+\input{appendix}
 \end{document}
 %20171114-155627

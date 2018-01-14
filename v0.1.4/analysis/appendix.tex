@@ -17,10 +17,10 @@ def getStrategy1(deal, agt):
   rest = []
   for agt1 in deal.keys():
     if agt1 != agt:
-      rest = rest + deal[agt1]  
+      rest = rest + deal[agt1]
   X = getCards(rest, 2)
   annL1 = ut.allHands(len(hand), hand + X)
-  if rand.randint(0,1) == 0: 
+  if rand.randint(0,1) == 0:
     # drop an element of X
     X.pop()
   annL2 = ut.allHands(len(hand), hand + X)
@@ -51,8 +51,8 @@ def getCards(deck, n):
 \subsection{Runs}
 
 In order to obtain an actual run we use the code
-{\textbf \textrm getRun1} shown below and 
-{\textbf \textrm getRuns1} to get a list of 
+{\textbf \textrm getRun1} shown below and
+{\textbf \textrm getRuns1} to get a list of
 distinct runs as given below.
 
 \begin{verbatim}
@@ -79,7 +79,7 @@ def getRuns1(deal, infAgts, k, cutoff):
     currRun = getRun1(deal, infAgts)
     j = 0
     while currRun in runList and j < cutoff:
-      currRun = getRun1(deal, infAgts)      
+      currRun = getRun1(deal, infAgts)
       j = j + 1
     if j == cutoff: # give up on obtaining k runs
       return runList
@@ -110,10 +110,3 @@ def getEavesResult(state, run, eaves):
 
 \subsection{Experimental Results}
 \label{appdx:exec}
-
-Have a look at actually using above code to generate
-some sample runs. The runs were generated in ipython
-and the resulting runs were obtained below.
-
-\input{py/runs1-a.tex}
-
