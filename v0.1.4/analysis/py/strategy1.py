@@ -10,6 +10,7 @@ import random  as rand;
 ################################################################
 def getAnn1ForX(deal, agt, X):
   '''
+  returns the announcement "My hand is a subset of H_agt \cup X".
   '''
   hand = deal[agt]
   annL1 = ut.allHands(len(hand), hand + X[agt])
@@ -143,23 +144,34 @@ def getRuns1State(i, n, cutoff):
 ####  Obtaining latex tables (alongwith results)
 ################################################################
 def getColPosK(stateList, agt):
-  posK  = {}
+  '''
+  Get summary of +ve knowledge of agt for stateList.
+  '''
+  col  = {}
   for state in stateList:
     nPos = len(state.getPosK('e'))
-    if not nPos in posK:
-      posK[nPos] = 1
+    if not nPos in col.keys():
+      col[nPos] = 1
     else:
-      posK[nPos] = posK[nPos] + 1
-  return posK
+      col[nPos] = col[nPos] + 1
+  return col
 
-def getColumnP(startState, runLst, agt):
+def getRunsColPosK(startState, runLst, agt):
+  '''
+  Given a list of runs, return the summary of PosK
+  '''
   stateL = []
   s0 = startState
   for r in runLst:
     stateL.append(s0.execRun(r))
-  return getColPosK(stateL, agt)
+  col = getColPosK(stateL, agt)
+  return col
 
-def getTablePosK(state, runL, interval, agt):
+def getRunsColumns(state, runL, interval, agt):
+  '''
+  split runs up into intervals
+  and return a list of columns
+  '''
   rL = []
   i = 0
   while i < len(runL):
@@ -172,77 +184,41 @@ def getTablePosK(state, runL, interval, agt):
     rL.append(rList)
   columns = []
   for rList in rL:
-    columns.append(getColumnP(state, rList, agt))
+    columns.append( getRunsColPosK(state, rList, agt) )
   return columns
 
 def getLatexPosK(columns, colHeaders, agt):
+  '''
+  Obtain table from columns and colHeaders information
+  '''
   latex = ''
-
-################################################################
-####  TODO : Randomized runs with statistical guarantees.
-################################################################
-
-def getCards(deck, n):
-  '''
-  Get n distinct cards randomly from deck
-  '''
-  if len(deck) < n:
-    return []
-  rangeList = []
-  for c in deck:
-    rangeList.append(c)
-  cardsL = []
-  for i in range(n):
-    maxId = len(rangeList) - 1
-    idx = rand.randint(0, maxId)
-    cardsL.append( rangeList[idx])
-    rangeList.pop(idx)
-  return cardsL
-
-def getStrategy1(deal, agt):
-  '''
-  Return a possible announcement sequence for agt at deal.
-  Since announcements are independent of actual history, we
-  can generate the strategy apriori.
-  '''
-  hand = deal[agt]
-  rest = []
-  for agt1 in deal.keys():
-    if agt1 != agt:
-      rest = rest + deal[agt1]
-  X = getCards(rest, 2)
-  annL1 = ut.allHands(len(hand), hand + X)
-  if rand.randint(0,1) == 0:
-    X.pop() # drop an element of X
-  annL2 = ut.allHands(len(hand), hand + X)
-  return [annL1, annL2]
-
-def getRun1(deal, infAgts):
-  '''
-  Return a possible run of protocol 1 at deal.
-  '''
-  annSequences = {}
-  for agt in infAgts:
-    annSequences[agt] =  getStrategy1(deal, agt)
-  run = []
-  for i in range(2):
-    for agt in infAgts:
-      ann = (agt, annSequences[agt][i])
-      run.append( ann )
-  return run
-
-def getRuns1(deal, infAgts, k, cutoff):
-  '''
-  Get k distinct runs of protocol 1 starting at deal.
-  '''
-  runList = []
-  for i in range(k):
-    currRun = getRun1(deal, infAgts)
-    j = 0
-    while currRun in runList and j < cutoff:
-      currRun = getRun1(deal, infAgts)
-      j = j + 1
-    if j == cutoff: # give up on obtaining k runs
-      return runList
-    runList.append(currRun)
-  return runList
+  keyLst = []
+  for col in columns:
+    keyLst = keyLst + col.keys()
+  keyLst = list(set(keyLst))
+  header = '\n\n\\begin{tabular}{| c | ' # First column is basically the key.
+  for cH in colHeaders:
+    header = header + ' c '
+  header = header + ' || c |}\n' # last column is for total.
+  header = header + '\hline\n\t' # Header of first column is empty
+  for cH in colHeaders :
+    header = header + ' &\t ' + str(cH) + '\t'
+  header = header + ' &\t total \t'
+  header = header + '\\\\\n'
+  header = header + '\hline \n'
+  body = ''
+  keyLst.sort()
+  for key in keyLst:
+    body = body+str(key)+'\t'
+    total = 0
+    for col in columns:
+      if not key in col.keys():
+        body = body + ' &\t 0 \t'
+      else :
+        body = body + ' &\t '+ str(col[key])+'\t'
+        total = total + col[key]
+    body = body + ' &\t '+ str(total)+'\t\\\\\n'
+  footer = '\hline'
+  footer = footer + '\end{tabular}\n\n'
+  tableStr = header + body + footer
+  return tableStr
