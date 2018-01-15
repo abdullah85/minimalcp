@@ -195,7 +195,8 @@ def getLatexPosK(columns, colHeaders):
   for col in columns:
     keyLst = keyLst + col.keys()
   keyLst = list(set(keyLst))
-  header = '\n\n\\begin{tabular}{| c | ' # First column is basically the key.
+  header = '\n\vspace{12pt}'
+  header = '\n\\begin{tabular}{| c | ' # First column is basically the key.
   for cH in colHeaders:
     header = header + ' c '
   header = header + ' || c |}\n' # last column is for total.
