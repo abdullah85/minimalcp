@@ -231,7 +231,7 @@ def getTableFor(i, interval, cutOff, nRuns, fName):
   colHeaders = []
   for i in range(len(cols)):
     colHeaders.append(i)
-  tabTex = getLatexPosK(columns, colHeaders)
+  tabTex = getLatexPosK(cols, colHeaders)
   f =  open(fName, 'w')
   f.write(tabTex)
   f.close()
