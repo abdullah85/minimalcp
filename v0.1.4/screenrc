@@ -1,0 +1,6 @@
+
+hardstatus on
+hardstatus alwayslastline
+hardstatus string "%w%=%m/%d %c"
+
+caption always “%H %c | %-w%{=}%n-%t%{-}%+w”
