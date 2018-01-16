@@ -143,20 +143,20 @@ def getRuns1State(i, n, cutoff):
 ################################################################
 ####  Obtaining latex tables (alongwith results)
 ################################################################
-def getColPosK(stateList, agt):
+def getColPosK(solver, stateList, agt):
   '''
   Get summary of +ve knowledge of agt for stateList.
   '''
   col  = {}
   for state in stateList:
-    nPos = len(state.getPosK('e'))
+    nPos = len(state.getPosK(solver, 'e'))
     if not nPos in col.keys():
       col[nPos] = 1
     else:
       col[nPos] = col[nPos] + 1
   return col
 
-def getRunsColPosK(startState, runLst, agt):
+def getRunsColPosK(solver, startState, runLst, agt):
   '''
   Given a list of runs, return the summary of PosK
   '''
@@ -164,13 +164,14 @@ def getRunsColPosK(startState, runLst, agt):
   s0 = startState
   for r in runLst:
     stateL.append(s0.execRun(r))
-  col = getColPosK(stateL, agt)
+  col = getColPosK(solver, stateL, agt)
   return col
 
 def getRunsColumns(state, runL, interval, agt):
   '''
   split runs up into intervals and return a list of columns
   '''
+  solver = state.cp.getSolver()
   rL = []
   i = 0
   while i < len(runL):
@@ -183,7 +184,7 @@ def getRunsColumns(state, runL, interval, agt):
     rL.append(rList)
   columns = []
   for rList in rL:
-    columns.append( getRunsColPosK(state, rList, agt) )
+    columns.append( getRunsColPosK(solver, state, rList, agt) )
   return columns
 
 def getLatexPosK(columns, colHeaders):

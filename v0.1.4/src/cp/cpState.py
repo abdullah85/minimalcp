@@ -111,7 +111,28 @@ class cpState:
       return True
     return False
 
-  def getPosK(self, agt):
+  def knowsPropSolver(self, solver, agt1, neg, agt2, card):
+    '''
+    Check if agt1 knows that agt2 has card if neg is False
+    and check if agt1 knows that agt2 does not have card
+    if neg is True.
+    '''
+    cp = self.cp
+    if not neg:
+      prop = cp.getKProp(agt1, agt2, card)
+    else:
+      prop = cp.getKNProp(agt1, agt2, card)
+    agt1K = And(self.knowledge[agt1])
+    solver.push()
+    solver.add(agt1K)
+    solver.add( Not(prop) )
+    res = solver.check()
+    solver.pop()
+    if res == unsat :
+      return True
+    return False
+
+  def getPosK(self, solvr, agt):
     '''
     Obtain the set of positive knowledge propositions agt 
     knows in this state. Note that the queries we make
@@ -123,7 +144,7 @@ class cpState:
       if agt1 != agt and deal[agt1] != []:
         aCards = deal[agt1]
         for card in aCards:
-          if self.knowsProp(agt, False, agt1, card) :
+          if self.knowsPropSolver(solvr, agt, False, agt1, card) :
             prop = cp.getKProp(agt, agt1, card)
             resL.append(prop.sexpr())
     resL.sort()
